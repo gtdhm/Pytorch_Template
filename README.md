@@ -11,13 +11,13 @@ Three step to use a functional template project for your any mission. A deep lea
 
 ## Requirements
 ![Github](https://img.shields.io/badge/python-v3.6-blue.svg?style=for-the-badge&logo=python)
-![Github](https://img.shields.io/badge/Pytorch-v2.1.3-orange.svg?style=for-the-badge&logo=Pytorch)
+![Github](https://img.shields.io/badge/Pytorch-v0.4.1-orange.svg?style=for-the-badge&logo=Pytorch)
 ![Github](https://img.shields.io/badge/Torchvision-v0.2.1-11B48A.svg?style=for-the-badge&logo=Vine)
 * Python >= 3.5 (3.6 recommended)
 * numpy
 * matplotlib
-* torch>=0.4.1
-* torchvision>=0.2.1
+* torch>=0.4.1 (1.1.0 recommended)
+* torchvision>=0.2.1 (0.3.0 recommended)
 
 ## Structures
 ```
