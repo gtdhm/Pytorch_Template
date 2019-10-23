@@ -1,0 +1,43 @@
+
+================================ Train Paths ===============================
+>>>       CHECKPOINT_DIR: ./work_dir/DemoModel_multi_class_demo          <<<
+>>>             DATA_DIR: ./dataset/multi_class_demo                     <<<
+>>>             ROOT_DIR: ./                                             <<<
+>>>       TRAIN_DATA_DIR: ./dataset/multi_class_demo/train               <<<
+>>>      TRAIN_LABEL_DIR: ./dataset/multi_class_demo/train_split.csv     <<<
+>>>         VAL_DATA_DIR: ./dataset/multi_class_demo/val                 <<<
+>>>        VAL_LABEL_DIR: ./dataset/multi_class_demo/val_split.csv       <<<
+==================================== End ===================================
+
+=============================== Train Options ==============================
+>>>                            batch : 32                                <<<
+>>>                        benchmark : True                              <<<
+>>>                         dataroot : multi_class_demo                  <<<
+>>>                      display_net : True                              <<<
+>>>                    display_param : True                              <<<
+>>>                     display_path : True                              <<<
+>>>                            epoch : 20                                <<<
+>>>                             flip : horizontal                        <<<
+>>>                          gpu_ids : 0                                 <<<
+>>>                        init_type : normal                            <<<
+>>>                       input_size : (224, 224, 3)                     <<<
+>>>                           is_val : True                              <<<
+>>>                               lr : 0.001                             <<<
+>>>                    lr_linear_fix : 3                                 <<<
+>>>                     lr_scheduler : step                              <<<
+>>>                    lr_step_decay : 188,397                           <<<
+>>>                       model_name : DemoModel                         <<<
+>>>                         net_name : DemoNet                           <<<
+>>>                      print_epoch : 1                                 <<<
+>>>                       print_step : 2                                 <<<
+>>>                           rotate : None                              <<<
+>>>                       save_epoch : -1                                <<<
+>>>                      save_metric : ACC                               <<<
+>>>                        save_mode : param                             <<<
+>>>                   save_train_log : True                              <<<
+>>>                             seed : 3                                 <<<
+>>>                      start_epoch : 1                                 <<<
+>>>                      train_label : train_split.csv                   <<<
+>>>                        val_label : val_split.csv                     <<<
+>>>                          workers : 2                                 <<<
+==================================== End ===================================

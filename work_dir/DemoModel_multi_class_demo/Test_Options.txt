@@ -1,0 +1,30 @@
+
+================================ Test Paths ================================
+>>>       CHECKPOINT_DIR: ./work_dir/DemoModel_multi_class_demo          <<<
+>>>             DATA_DIR: ./dataset/multi_class_demo                     <<<
+>>>             ROOT_DIR: ./                                             <<<
+>>>        TEST_DATA_DIR: ./dataset/multi_class_demo/test                <<<
+>>>       TEST_LABEL_DIR: ./dataset/multi_class_demo/test_split.csv      <<<
+==================================== End ===================================
+
+=============================== Test Options ===============================
+>>>                            batch : 32                                <<<
+>>>                        benchmark : True                              <<<
+>>>                         dataroot : multi_class_demo                  <<<
+>>>                      display_net : True                              <<<
+>>>                    display_param : True                              <<<
+>>>                     display_path : True                              <<<
+>>>                             flip : None                              <<<
+>>>                          gpu_ids : 0                                 <<<
+>>>                        init_type : normal                            <<<
+>>>                       input_size : (224, 224, 3)                     <<<
+>>>                       model_name : DemoModel                         <<<
+>>>                         net_name : DemoNet                           <<<
+>>>                         num_test : 120                               <<<
+>>>                           rotate : None                              <<<
+>>>                        save_mode : param                             <<<
+>>>                    save_test_log : True                              <<<
+>>>                             seed : 3                                 <<<
+>>>                       test_label : test_split.csv                    <<<
+>>>                          workers : 2                                 <<<
+==================================== End ===================================
