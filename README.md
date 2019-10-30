@@ -1,13 +1,13 @@
 # Pytorch_Template
-Three step to use a functional template project for your any mission. A deep learning project template with simple modification based on Pytorch.  
+You only need three step to use a functional template project for your any missions. A deep learning project template with simple modification based on Pytorch.  
 **`1.Strong scalability`**  
 **`2.Clear structure`**  
 **`3.Three step to modify`**  
 **`4.Easy to migrate`**   
 
 >RELATED LINKS  
->① Keras_Template --> [https://github.com/gtdhm/Keras_Template.git](https://github.com/gtdhm/Keras_Template.git)   
->② Pytorch_Template --> [https://github.com/gtdhm/Pytorch_Template.git](https://github.com/gtdhm/Pytorch_Template.git) 
+>① Keras_Template --> [https://github.com/gtdhm/Keras_Template](https://github.com/gtdhm/Keras_Template)   
+>② Pytorch_Template --> [https://github.com/gtdhm/Pytorch_Template](https://github.com/gtdhm/Pytorch_Template) 
 
 ## Requirements
 ![Github](https://img.shields.io/badge/python-v3.6-blue.svg?style=for-the-badge&logo=python)
