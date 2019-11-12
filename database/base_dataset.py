@@ -147,18 +147,18 @@ class DataTransforms(object):
             image = image.convert("RGB")
         return image
 
-    def keep_ratio_resize(self, image, fill=(255, 255, 255)):
+    def keep_ratio_resize(self, image, fill=(0, 0, 0)):
         # resize image with its h/w ratio, and padding the boundary
         old_size = image.size  # (width, height)
         ratio = min(float(self.opts.input_size[i]) / (old_size[i]) for i in range(len(old_size)))
         new_size = tuple([int(i * ratio) for i in old_size])
-        image = image.resize((new_size[1], new_size[0]), resample=Image.ANTIALIAS)  # w*h
-        pad_w = self.opts.input_size[1] - new_size[1]
-        pad_h = self.opts.input_size[0] - new_size[0]
-        top, bottom = pad_h // 2, pad_h - (pad_h // 2)
-        left, right = pad_w // 2, pad_w - (pad_w // 2)
+        image = image.resize((new_size[0], new_size[1]), resample=Image.ANTIALIAS)  # w*h
+        pad_h = self.opts.input_size[1] - new_size[1]
+        pad_w = self.opts.input_size[0] - new_size[0]
+        top = pad_h // 2
+        left = pad_w // 2
         resize_image = Image.new(mode='RGB', size=(self.opts.input_size[1], self.opts.input_size[0]), color=fill)
-        resize_image.paste(image, (left, top, new_size[1] + right, new_size[0] + bottom))  # w*h
+        resize_image.paste(image, (left, top, left + image.size[0], top + image.size[1]))  # w*h
         return resize_image
 
     def get_transforms(self):
@@ -187,7 +187,7 @@ class DataTransforms(object):
             lists += [transforms.RandomHorizontalFlip(p=0.5)]
         if self.opts.rotate is not None:
             rotate = list(map(int, self.opts.rotate.split(',')))
-            lists += [transforms.RandomRotation(degrees=rotate)]
+            lists += [transforms.RandomRotation(degrees=rotate, expand=True)]
 
         return lists
     # TODO(User): End
