@@ -6,6 +6,8 @@
 # ============================================================
 
 import os
+import random
+import numpy as np
 from PIL import Image
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset
@@ -21,18 +23,18 @@ class BaseDataset(Dataset):
         cfg: the total options
 
     Examples:
-        <<< train_db = BaseDataset(cfg)
+        <<< train_db = BaseDataset(cfg, use_trans=False)
             train_db.load_data(mode='Train')
     """
 
-    def __init__(self, cfg):
+    def __init__(self, cfg, use_trans=False):
         super(BaseDataset, self).__init__()
         self.cfg = cfg
         self.opts = cfg.opts
         self.image_info = {}
         self.label_info = {}
         # Instance a DataTransforms
-        self.transform = DataTransforms(cfg)
+        self.transform = DataTransforms(cfg, use_trans)
 
     def _add_to_database(self, index, data_set, path):
         # TODO(User) >>> add your own data encoding
@@ -125,14 +127,14 @@ class DataTransforms(object):
             image = transform.get_transforms()(image)
     """
 
-    def __init__(self, cfg):
+    def __init__(self, cfg, use_trans=False):
         self.cfg = cfg
         self.opts = cfg.opts
+        self.use_trans = use_trans
 
     def __call__(self, image):
         """Apply all the transforms."""
         image = self.prepare_image(image)
-        image = self.keep_ratio_resize(image)
         return self.get_transforms()(image)
 
     @staticmethod
@@ -147,48 +149,141 @@ class DataTransforms(object):
             image = image.convert("RGB")
         return image
 
-    def keep_ratio_resize(self, image, fill=(0, 0, 0)):
-        # resize image with its h/w ratio, and padding the boundary
-        old_size = image.size  # (width, height)
-        ratio = min(float(self.opts.input_size[i]) / (old_size[i]) for i in range(len(old_size)))
-        new_size = tuple([int(i * ratio) for i in old_size])
-        image = image.resize((new_size[0], new_size[1]), resample=Image.ANTIALIAS)  # w*h
-        pad_h = self.opts.input_size[1] - new_size[1]
-        pad_w = self.opts.input_size[0] - new_size[0]
-        top = pad_h // 2
-        left = pad_w // 2
-        resize_image = Image.new(mode='RGB', size=(self.opts.input_size[1], self.opts.input_size[0]), color=fill)
-        resize_image.paste(image, (left, top, left + image.size[0], top + image.size[1]))  # w*h
-        return resize_image
-
     def get_transforms(self):
         """Get the image transforms
         Returns:
             composes several transforms together
         """
-        transforms_list = []
-        transforms_list += self.customer_transforms()
+        trans_list = []
+        if self.use_trans:
+            if self.opts.flip == 'vertical':
+                trans_list += [transforms.RandomVerticalFlip(p=0.5)]
+            elif self.opts.flip == 'horizontal':
+                trans_list += [transforms.RandomHorizontalFlip(p=0.5)]
+            if self.opts.rotate is not None and random.random() <= 0.5:
+                rotate = list(map(int, self.opts.rotate.split(',')))
+                trans_list += [transforms.RandomRotation(degrees=rotate, expand=False)]
+
+            # customer image transforms
+            if self.opts.translate is not None:
+                trans_list += [RandomTranslate(self.opts.translate)]
+            if self.opts.color_scale is not None:
+                trans_list += [RandomColorChannel(self.opts.color_scale)]
+        trans_list += [KeepRatioResize(resize_size=(self.opts.input_size[0], self.opts.input_size[1]))]
+
         # Convert and Normalize
-        transforms_list += [transforms.ToTensor()]
-        transforms_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+        trans_list += [transforms.ToTensor()]
+        trans_list += [transforms.Normalize(self.opts.mean, self.opts.std)]
 
-        return transforms.Compose(transforms_list)
+        return transforms.Compose(trans_list)
 
-    # TODO(User) >>> create your own transforms customized functions
-    def customer_transforms(self):
-        """Get customer image transforms
-        Returns:
-            a list several transforms together
+
+###############################################################
+# Custom Data Transforms Class
+###############################################################
+# TODO(User) >>> create your own transforms customized class
+class KeepRatioResize(object):
+    """Keep the aspect ratio to resize given PIL Image without deforming the image.
+    Inputs:
+        resize_size(int or tuple): the output size of the resized image >>> (w, h)
+        fill: (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
+            length 3, it is used to fill R, G, B channels respectively
+    """
+
+    def __init__(self, resize_size, fill=(0, 0, 0)):
+        self.resize_size = resize_size if type(fill) != int else (resize_size, resize_size)
+        self.fill = fill if type(fill) != int else (fill, fill, fill)
+        assert len(self.resize_size) == 2, "resize_size must be int or tuple!"
+        assert len(self.fill) == 3, "fill must be int or tuple!"
+
+    def __call__(self, img):
         """
-        lists = []
-        if self.opts.flip == 'vertical':
-            lists += [transforms.RandomVerticalFlip(p=0.5)]
-        elif self.opts.flip == 'horizontal':
-            lists += [transforms.RandomHorizontalFlip(p=0.5)]
-        if self.opts.rotate is not None:
-            rotate = list(map(int, self.opts.rotate.split(',')))
-            lists += [transforms.RandomRotation(degrees=rotate, expand=True)]
+        Inputs:
+            img (PIL Image): Image to be resize.
+        Returns:
+            img(PIL Image): Resized image.
+        """
+        # resize image with its h/w ratio, and padding the boundary
+        old_size = img.size  # (width, height)
+        ratio = min(float(self.resize_size[i]) / (old_size[i]) for i in range(len(old_size)))
+        new_size = tuple([int(i * ratio) for i in old_size])
+        img = img.resize((new_size[0], new_size[1]), resample=Image.ANTIALIAS)  # w*h
+        pad_h = self.resize_size[1] - new_size[1]
+        pad_w = self.resize_size[0] - new_size[0]
+        top = pad_h // 2
+        left = pad_w // 2
+        resize_image = Image.new(mode='RGB', size=(self.resize_size[1], self.resize_size[0]), color=self.fill)
+        resize_image.paste(img, (left, top, left + img.size[0], top + img.size[1]))  # w*h
+        return resize_image
 
-        return lists
-    # TODO(User): End
+
+class RandomTranslate(object):
+    """Vertically or horizontally translate the given PIL Image randomly with a given coefficient.
+    Inputs:
+        translate(str or tuple): coefficient of the image being translate >>> (0.9, 1.2) or "0.9,1.2"
+        p: the probability to translate the image
+        fill: (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
+            length 3, it is used to fill R, G, B channels respectively
+    """
+
+    def __init__(self, translate, p=0.5, fill=(0, 0, 0)):
+        self.p = p
+        self.translate = translate if type(translate) != str else list(map(float, translate.split(',')))
+        self.fill = fill if type(fill) != int else (fill, fill, fill)
+        assert len(self.translate) == 2, "translate must be str or tuple with length:2"
+        assert len(self.fill) == 3, "fill must be int or tuple!"
+
+    def __call__(self, img):
+        """
+        Inputs:
+            img (PIL Image): Image to be translate.
+        Returns:
+            img(PIL Image): Translated image.
+        """
+        if random.random() < self.p:
+            return img
+        ratio = random.uniform(self.translate[0], self.translate[1])
+        position = random.randint(0, 1)  # 0 for vertical and 1 for horizontal
+        (w, h) = img.size  # (width, height)
+        left = 0 + abs(int(ratio * w - w)) * (1-position) if (ratio * w - w) < 0 else 0
+        upper = 0 + abs(int(ratio * h - h)) * position if (ratio * h - h) < 0 else 0
+        right = w - abs(int(ratio * w - w)) * (1-position) if (ratio * w - w) > 0 else w
+        lower = h - abs(int(ratio * h - h)) * position if (ratio * h - h) > 0 else h
+        img = img.crop(box=(left, upper, right, lower))
+        resize_image = Image.new(mode='RGB', size=(h, w), color=self.fill)
+        resize_image.paste(img, (left, upper, right, lower))  # w*h
+        return resize_image
+
+
+class RandomColorChannel(object):
+    """Scaling the given PIL Image channels randomly with a given coefficient.
+    Inputs:
+        color_scale(str or tuple): coefficient of the image being scale >>> (0.6, 1.4) or "0.6,1.4"
+        p: the probability to translate the image
+    """
+
+    def __init__(self, color_scale, p=0.5):
+        self.p = p
+        self.color_scale = color_scale if type(color_scale) != str else list(map(float, color_scale.split(',')))
+        assert len(self.color_scale) == 2, "color_scale must be str or tuple with length:2"
+
+    def __call__(self, img):
+        """
+        Inputs:
+            img (PIL Image): Image to be scale.
+        Returns:
+            img(PIL Image): Scaled image.
+        """
+        if random.random() < self.p:
+            return img
+        scale = np.ones(3)
+        for i in range(3):
+            scale[i] = random.uniform(self.color_scale[0], self.color_scale[1] + 0.1)
+        img = np.asarray(img)
+        # en = ImageEnhance.Color(img)
+        # img = en.enhance(1.4)
+        img = img * scale
+        img = np.clip(img, 0.0, 255.0).astype(np.uint8)
+        return Image.fromarray(img)
+# TODO(User): End
 
