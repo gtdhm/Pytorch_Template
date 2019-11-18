@@ -56,6 +56,10 @@ class BaseOptions(object):
         # Network base options
         parser.add_argument('--input_size', type=tuple, default=(224, 224, 3),
                             help='the input image dim (w * h * c)')
+        parser.add_argument('--mean', type=tuple, default=(0.485, 0.456, 0.406),
+                            help='the normalize mean')
+        parser.add_argument('--std', type=tuple, default=(0.229, 0.224, 0.225),
+                            help='the normalize std')
         parser.add_argument('--batch', type=int, default=32,
                             help='set a batch size inputs')
         parser.add_argument('--workers', type=int, default=2,
@@ -65,14 +69,18 @@ class BaseOptions(object):
         parser.add_argument('--benchmark', type=bool, default=True,
                             help="whether use cudnn benchmark or not")
 
-        parser.add_argument('--init_type', type=str, default='normal',
-                            help="network initialization >>> [normal | xavier | kaiming | orthogonal]")
+        parser.add_argument('--init_type', type=str, default='auto',
+                            help="network initialization >>> [auto | normal | xavier | kaiming | orthogonal]")
 
         # Data augmentation options
         parser.add_argument('--flip', type=str, default=None,
-                            help='random flip the images for data augmentation >>> [horizontal | vertical]')
+                            help='>>> random flip the images for data augmentation:[horizontal | vertical]')
         parser.add_argument('--rotate', type=str, default=None,
-                            help="random rotate the images for data augmentation >>> [0,360]")
+                            help=">>> random rotate the images for data augmentation:[0,360]")
+        parser.add_argument('--translate', type=str, default=None,
+                            help=">>> random image translation coefficient for data augmentation:[0.9,1.2]")
+        parser.add_argument('--color_scale', type=str, default=None,
+                            help=">>> random to scale image color channel for data augmentation:[0.6,1.4]")
 
         # Display relevant options
         parser.add_argument('--display_path', type=bool, default=True,
