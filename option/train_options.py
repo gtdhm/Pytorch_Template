@@ -70,6 +70,8 @@ class TrainOptions(BaseOptions):
                                  help="learning rate")
         self.parser.add_argument('--lr_scheduler', type=str, default='step',
                                  help="a learning rate scheduler >>> [linear | step | plateau | cosine]")
+        self.parser.add_argument('--lr_gamma', type=float, default=0.1,
+                                 help="the learning rate decay parameter: gamma")
         self.parser.add_argument('--lr_linear_fix', type=int, default=3,
                                  help="linear scheduler: learning rate in this stage is fixed")
         self.parser.add_argument('--lr_step_decay', type=str, default="188,397",
