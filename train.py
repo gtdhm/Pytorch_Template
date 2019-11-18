@@ -21,11 +21,11 @@ from util import MultiClassMetrics, print_train_info, print_val_info
 def val_model(cfg, model, val_loader, val_flag, metrics, per_epoch):
     """val the model"""
     # inner loop for one batch
-    for per_step, data in enumerate(val_loader):
-        model.input(data[0], data[1])
+    for per_step, (images, labels, _) in enumerate(val_loader):
+        model.input(images=images, labels=labels)
         model.test()
 
-        metrics.eval(data[1], model.out.cpu(), indicators="ACC, F1, FPR", step=len(val_loader))
+        metrics.eval(labels, model.out.cpu(), indicators="ACC, F1, FPR", step=len(val_loader))
         print_val_info(val_flag, cfg, [per_step + 1, len(val_loader)], metrics.metrics)
 
     if cfg.opts.save_metric == "FPR":
