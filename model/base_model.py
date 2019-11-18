@@ -59,18 +59,19 @@ class BaseModel(object):
         if cfg.mode == 'Train':
             # 2. Define optimizer
             self.optimizer = optim.Adam(self.network.parameters(), lr=self.opts.lr, betas=(0.9, 0.999), eps=1e-8)
-            # 3. Create scheduler
-            self.scheduler = self._create_scheduler()
-            # 4. Define loss
+            # 3. Define loss
             self.criterion = nn.CrossEntropyLoss()  # FocalLoss()
-        # 5. Init weight
+        # 4. Init weight
         self._weights_init()
         # TODO(User): End
 
         self._display_network(verbose=self.opts.display_net)
-        # 6. Load model checkpoint
+        # 5. Load model checkpoint
         if cfg.opts.load_checkpoint != 'scratch':
             self.load_model()
+        if cfg.mode == 'Train':
+            # 6. Create scheduler
+            self.scheduler = self._create_scheduler()
 
     def input(self, images, labels):
         """Unpack input data from the dataloader and perform
@@ -97,6 +98,8 @@ class BaseModel(object):
         """Training flow of the whole model."""
         # Enable the Backward
         self.set_requires_grad([self.network], True)
+        # Set network in train mode
+        self.network.train()
         # Run the Forward
         self.forward()
         # Clean up Gradients
@@ -111,6 +114,8 @@ class BaseModel(object):
         with torch.no_grad():
             # Disable the Backward
             self.set_requires_grad([self.network], False)
+            # Set network in eval mode
+            self.network.eval()
             self.forward()
 
     def update_lr(self):
@@ -130,13 +135,13 @@ class BaseModel(object):
             metrics: a current list like [metric name, metric value]
         """
         current_time = time.strftime("%m%d%H%M%S", time.localtime())
-        save_filename = '[{}]_epoch:{}_{}:{:.3f}%_batch:{}_lr:{}_mode:{}_time:{}.pth' \
+        save_filename = '[{}]_epoch:{}_{}:{:.6f}%_batch:{}_lr:{:.7f}_mode:{}_time:{}.pth' \
             .format(self.opts.net_name, current_epoch, metrics[0], metrics[1] * 100,
                     self.opts.batch, self.lr, self.opts.save_mode, current_time)
         if "Best" in metrics[0]:
             if os.path.isfile(os.path.join(self.cfg.CHECKPOINT_DIR, self.best_cache)):
                 os.remove(os.path.join(self.cfg.CHECKPOINT_DIR, self.best_cache))
-                save_filename = '[{}]_epoch:{}_{}:{:.3f}%_batch:{}_lr:{}_mode:{}_time:{}.pth' \
+                save_filename = '[{}]_epoch:{}_{}:{:.6f}%_batch:{}_lr:{:.7f}_mode:{}_time:{}.pth' \
                     .format(self.opts.net_name, current_epoch, metrics[0], metrics[1] * 100,
                             self.opts.batch, self.lr, self.opts.save_mode, current_time)
             self.best_cache = save_filename
@@ -150,7 +155,7 @@ class BaseModel(object):
             torch.save(save_store, save_path)
         else:
             raise IOError("[Error] Save mode in options --> '{:s}' was not found...".format(self.opts.save_mode))
-        print(">>> Saving model->%s" % save_filename)
+        print(">>> Saving ->%s" % save_filename)
 
     def load_model(self):
         """Load all the networks from the disk."""
@@ -235,7 +240,8 @@ class BaseModel(object):
         # multi-GPUs
         if len(self.gpu_ids) > 1:
             self.network = torch.nn.DataParallel(self.network, self.gpu_ids)
-        self.network.apply(common_init)
+        if self.opts.init_type != 'auto':
+            self.network.apply(common_init)
 
     def _create_scheduler(self):
         """Create a learning rate scheduler."""
@@ -251,7 +257,7 @@ class BaseModel(object):
             lr_step_decay = lr_step_decay - torch.full_like(lr_step_decay, self.start_epoch+1)
             scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer,
                                                        milestones=lr_step_decay.numpy().tolist(),
-                                                       gamma=0.1)
+                                                       gamma=self.opts.lr_gamma)
         elif self.opts.lr_scheduler == 'plateau':
             scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.2,
                                                              threshold=0.01, patience=5)
@@ -259,6 +265,8 @@ class BaseModel(object):
             scheduler = optim.lr_scheduler.CosineAnnealingLr(self.optimizer,
                                                              T_max=self.opts.lr_linear_fix-self.start_epoch,
                                                              eta_min=0)
+        elif self.opts.lr_scheduler == 'exp':
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=self.opts.lr_gamma)
         else:
             raise IOError("[Error] LR scheduler --> '{:s}' was not found...".format(self.opts.lr_scheduler))
         return scheduler
